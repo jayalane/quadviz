@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Function Visualizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f7;
+            color: #333;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .control-label {
+            font-weight: 600;
+            font-size: 18px;
+            width: 150px;
+        }
+        .control-slider {
+            flex-grow: 1;
+        }
+        .control-value {
+            width: 60px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .slider-container {
+            display: flex;
+            flex-grow: 1;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #e0e0e0;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .chart-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            width: 100%;
+            height: 400px;
+            position: relative;
+        }
+        .equation {
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .roots {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .color-a { color: #2563eb; }
+        .color-b { color: #059669; }
+        .color-c { color: #dc2626; }
+        #tooltip {
+            position: absolute;
+            display: none;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #function-plot {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quadratic Function Visualizer</h1>
+    
+    <div class="equation">
+        <span class="color-a" id="a-value">1</span>x² + 
+        <span class="color-b" id="b-value">0</span>x + 
+        <span class="color-c" id="c-value">1</span>
+    </div>
+    
+    <div class="roots" id="roots-info">
+        Calculating roots...
+    </div>
+    
+    <div class="controls">
+        <div class="control-row">
+            <div class="control-label"><span class="color-a">a</span> value:</div>
+            <div class="slider-container">
+                <input type="range" id="a-slider" class="control-slider" min="-50" max="50" value="1" step="1">
+                <div class="control-value" id="a-display">1</div>
+            </div>
+        </div>
+        
+        <div class="control-row">
+            <div class="control-label"><span class="color-b">b</span> value:</div>
+            <div class="slider-container">
+                <input type="range" id="b-slider" class="control-slider" min="-50" max="50" value="0" step="1">
+                <div class="control-value" id="b-display">0</div>
+            </div>
+        </div>
+        
+        <div class="control-row">
+            <div class="control-label"><span class="color-c">c</span> value:</div>
+            <div class="slider-container">
+                <input type="range" id="c-slider" class="control-slider" min="-50" max="50" value="1" step="1">
+                <div class="control-value" id="c-display">1</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <div id="tooltip"></div>
+        <canvas id="function-plot"></canvas>
+    </div>
+    
+    <script>
+        // Variables
+        let a = 1, b = 0, c = 1;
+        let canvas = document.getElementById('function-plot');
+        let ctx = canvas.getContext('2d');
+        let tooltip = document.getElementById('tooltip');
+        let mousePosition = { x: 0, y: 0 };
+        
+        // DOM elements
+        const aSlider = document.getElementById('a-slider');
+        const bSlider = document.getElementById('b-slider');
+        const cSlider = document.getElementById('c-slider');
+        const aDisplay = document.getElementById('a-display');
+        const bDisplay = document.getElementById('b-display');
+        const cDisplay = document.getElementById('c-display');
+        const aValue = document.getElementById('a-value');
+        const bValue = document.getElementById('b-value');
+        const cValue = document.getElementById('c-value');
+        const rootsInfo = document.getElementById('roots-info');
+        
+        // Calculate roots of the quadratic function
+        function calculateRoots(a, b, c) {
+            if (a === 0) {
+                if (b === 0) {
+                    return "Not a quadratic function. f(x) = " + c;
+                } else {
+                    // Linear function
+                    const root = -c / b;
+                    return "Linear function with root at x = " + root.toFixed(2);
+                }
+            }
+            
+            const discriminant = b * b - 4 * a * c;
+            
+            if (discriminant > 0) {
+                const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                return `Two real roots: x₁ = ${x1.toFixed(2)}, x₂ = ${x2.toFixed(2)}`;
+            } else if (discriminant === 0) {
+                const x = -b / (2 * a);
+                return `One repeated root: x = ${x.toFixed(2)}`;
+            } else {
+                const realPart = -b / (2 * a);
+                const imagPart = Math.sqrt(-discriminant) / (2 * a);
+                return `Two complex roots: x₁ = ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i, x₂ = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i`;
+            }
+        }
+        
+        // Calculate suitable x range based on roots and coefficients
+        function calculateRange(a, b, c) {
+            let min_x, max_x;
+            
+            if (a === 0) {
+                if (b === 0) {
+                    // Constant function
+                    min_x = -10;
+                    max_x = 10;
+                } else {
+                    // Linear function
+                    const root = -c / b;
+                    min_x = root - 10;
+                    max_x = root + 10;
+                }
+            } else {
+                // Quadratic function
+                // Find vertex x-coordinate
+                const vertexX = -b / (2 * a);
+                
+                // Calculate range based on roots or vertex
+                const discriminant = b * b - 4 * a * c;
+                
+                if (discriminant >= 0) {
+                    // Real roots
+                    const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                    const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                    
+                    // Ensure range captures roots and some extra space
+                    min_x = Math.min(x1, x2) - 5;
+                    max_x = Math.max(x1, x2) + 5;
+                } else {
+                    // Complex roots, use vertex
+                    min_x = vertexX - 10;
+                    max_x = vertexX + 10;
+                }
+                
+                // Ensure the range is not too small
+                if (max_x - min_x < 10) {
+                    const center = (max_x + min_x) / 2;
+                    min_x = center - 5;
+                    max_x = center + 5;
+                }
+                
+                // Ensure range shows interesting behavior
+                if (Math.abs(a) < 0.1) {
+                    min_x = -20;
+                    max_x = 20;
+                }
+            }
+            
+            // Generate points
+            const points = [];
+            const num_points = 200;
+            const step = (max_x - min_x) / num_points;
+            
+            let min_y = Infinity;
+            let max_y = -Infinity;
+            
+            for (let i = 0; i <= num_points; i++) {
+                const x = min_x + i * step;
+                const y = a * x * x + b * x + c;
+                points.push({ x, y });
+                
+                min_y = Math.min(min_y, y);
+                max_y = Math.max(max_y, y);
+            }
+            
+            // Add padding to y range
+            const padding_y = (max_y - min_y) * 0.2;
+            min_y = min_y - padding_y;
+            max_y = max_y + padding_y;
+            
+            return { min_x, max_x, min_y, max_y, points };
+        }
+        
+        // Convert from domain coordinates to canvas coordinates
+        function toCanvasCoordinates(x, y, range) {
+            const x_canvas = (x - range.min_x) / (range.max_x - range.min_x) * canvas.width;
+            const y_canvas = canvas.height - (y - range.min_y) / (range.max_y - range.min_y) * canvas.height;
+            return { x: x_canvas, y: y_canvas };
+        }
+        
+        // Convert from canvas coordinates to domain coordinates
+        function toDomainCoordinates(x_canvas, y_canvas, range) {
+            const x = range.min_x + (x_canvas / canvas.width) * (range.max_x - range.min_x);
+            const y = range.min_y + ((canvas.height - y_canvas) / canvas.height) * (range.max_y - range.min_y);
+            return { x, y };
+        }
+        
+        // Draw the quadratic function
+        function drawFunction() {
+            // Get current values
+            a = parseFloat(aSlider.value);
+            b = parseFloat(bSlider.value);
+            c = parseFloat(cSlider.value);
+            
+            // Update displays
+            aDisplay.textContent = a;
+            bDisplay.textContent = b;
+            cDisplay.textContent = c;
+            aValue.textContent = a;
+            bValue.textContent = b < 0 ? b : `+${b}`;
+            cValue.textContent = c < 0 ? c : `+${c}`;
+            
+            // Update roots information
+            rootsInfo.textContent = calculateRoots(a, b, c);
+            
+            // Calculate range and points
+            const range = calculateRange(a, b, c);
+            
+            // Set canvas size to match container size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            drawGrid(range);
+            
+            // Draw axes
+            drawAxes(range);
+            
+            // Draw function
+            drawCurve(range);
+            
+            // Draw roots if they exist
+            drawRoots(a, b, c, range);
+            
+            // Store the range for mouse interaction
+            canvas.range = range;
+        }
+        
+        // Draw the grid
+        function drawGrid(range) {
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            
+            // Draw vertical grid lines
+            const x_step = Math.ceil((range.max_x - range.min_x) / 20);
+            for (let x = Math.ceil(range.min_x / x_step) * x_step; x <= range.max_x; x += x_step) {
+                const { x: canvas_x } = toCanvasCoordinates(x, 0, range);
+                
+                ctx.beginPath();
+                ctx.moveTo(canvas_x, 0);
+                ctx.lineTo(canvas_x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Draw horizontal grid lines
+            const y_step = Math.ceil((range.max_y - range.min_y) / 20);
+            for (let y = Math.ceil(range.min_y / y_step) * y_step; y <= range.max_y; y += y_step) {
+                const { y: canvas_y } = toCanvasCoordinates(0, y, range);
+                
+                ctx.beginPath();
+                ctx.moveTo(0, canvas_y);
+                ctx.lineTo(canvas.width, canvas_y);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw the axes
+        function drawAxes(range) {
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#666';
+            
+            // X-axis
+            if (range.min_y <= 0 && range.max_y >= 0) {
+                const { y: y_axis } = toCanvasCoordinates(0, 0, range);
+                
+                ctx.beginPath();
+                ctx.moveTo(0, y_axis);
+                ctx.lineTo(canvas.width, y_axis);
+                ctx.stroke();
+                
+                // Draw x-axis labels
+                const x_step = Math.ceil((range.max_x - range.min_x) / 10);
+                for (let x = Math.ceil(range.min_x / x_step) * x_step; x <= range.max_x; x += x_step) {
+                    if (Math.abs(x) < 0.001) continue; // Skip zero
+                    
+                    const { x: canvas_x } = toCanvasCoordinates(x, 0, range);
+                    
+                    // Draw tick
+                    ctx.beginPath();
+                    ctx.moveTo(canvas_x, y_axis - 5);
+                    ctx.lineTo(canvas_x, y_axis + 5);
+                    ctx.stroke();
+                    
+                    // Draw label
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(x, canvas_x, y_axis + 8);
+                }
+            }
+            
+            // Y-axis
+            if (range.min_x <= 0 && range.max_x >= 0) {
+                const { x: x_axis } = toCanvasCoordinates(0, 0, range);
+                
+                ctx.beginPath();
+                ctx.moveTo(x_axis, 0);
+                ctx.lineTo(x_axis, canvas.height);
+                ctx.stroke();
+                
+                // Draw y-axis labels
+                const y_step = Math.ceil((range.max_y - range.min_y) / 10);
+                for (let y = Math.ceil(range.min_y / y_step) * y_step; y <= range.max_y; y += y_step) {
+                    if (Math.abs(y) < 0.001) continue; // Skip zero
+                    
+                    const { y: canvas_y } = toCanvasCoordinates(0, y, range);
+                    
+                    // Draw tick
+                    ctx.beginPath();
+                    ctx.moveTo(x_axis - 5, canvas_y);
+                    ctx.lineTo(x_axis + 5, canvas_y);
+                    ctx.stroke();
+                    
+                    // Draw label
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(y, x_axis - 8, canvas_y);
+                }
+            }
+            
+            // Draw origin label
+            if (range.min_x <= 0 && range.max_x >= 0 && range.min_y <= 0 && range.max_y >= 0) {
+                const { x: x_origin, y: y_origin } = toCanvasCoordinates(0, 0, range);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'top';
+                ctx.fillText('0', x_origin - 5, y_origin + 5);
+            }
+        }
+        
+        // Draw the curve
+        function drawCurve(range) {
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let first = true;
+            
+            for (const point of range.points) {
+                const { x: canvas_x, y: canvas_y } = toCanvasCoordinates(point.x, point.y, range);
+                
+                if (first) {
+                    ctx.moveTo(canvas_x, canvas_y);
+                    first = false;
+                } else {
+                    ctx.lineTo(canvas_x, canvas_y);
+                }
+            }
+            
+            ctx.stroke();
+        }
+        
+        // Draw the roots if they exist
+        function drawRoots(a, b, c, range) {
+            if (a === 0 && b === 0) return; // No roots for constant function
+            
+            const discriminant = b * b - 4 * a * c;
+            
+            if (discriminant >= 0 && a !== 0) {
+                // Real roots for quadratic
+                const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                
+                // Check if roots are within the visible range
+                if ((x1 >= range.min_x && x1 <= range.max_x) || (x2 >= range.min_x && x2 <= range.max_x)) {
+                    ctx.fillStyle = '#dc2626';
+                    
+                    if (x1 >= range.min_x && x1 <= range.max_x) {
+                        const { x: canvas_x1, y: canvas_y1 } = toCanvasCoordinates(x1, 0, range);
+                        
+                        ctx.beginPath();
+                        ctx.arc(canvas_x1, canvas_y1, 6, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                    
+                    if (x2 >= range.min_x && x2 <= range.max_x && Math.abs(x1 - x2) > 0.001) {
+                        const { x: canvas_x2, y: canvas_y2 } = toCanvasCoordinates(x2, 0, range);
+                        
+                        ctx.beginPath();
+                        ctx.arc(canvas_x2, canvas_y2, 6, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
+            } else if (a === 0 && b !== 0) {
+                // Linear function root
+                const x = -c / b;
+                
+                if (x >= range.min_x && x <= range.max_x) {
+                    const { x: canvas_x, y: canvas_y } = toCanvasCoordinates(x, 0, range);
+                    
+                    ctx.fillStyle = '#dc2626';
+                    ctx.beginPath();
+                    ctx.arc(canvas_x, canvas_y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // Handle mouse movement for tooltip
+        function handleMouseMove(event) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            
+            if (canvas.range) {
+                const domain = toDomainCoordinates(mouseX, mouseY, canvas.range);
+                const x = domain.x;
+                const y = a * x * x + b * x + c;
+                
+                tooltip.style.left = (event.clientX + 10) + 'px';
+                tooltip.style.top = (event.clientY - 30) + 'px';
+                tooltip.textContent = `f(${x.toFixed(2)}) = ${y.toFixed(2)}`;
+                tooltip.style.display = 'block';
+                
+                // Store mouse position for redraw
+                mousePosition = { x: mouseX, y: mouseY };
+            }
+        }
+        
+        // Handle mouse leave
+        function handleMouseLeave() {
+            tooltip.style.display = 'none';
+        }
+        
+        // Initialize
+        function initialize() {
+            // Set up event listeners
+            aSlider.addEventListener('input', drawFunction);
+            bSlider.addEventListener('input', drawFunction);
+            cSlider.addEventListener('input', drawFunction);
+            
+            // Set up mouse events for tooltip
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseleave', handleMouseLeave);
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                drawFunction();
+            });
+            
+            // Initial draw
+            drawFunction();
+        }
+        
+        // Initialize when window loads
+        window.onload = initialize;
+    </script>
+</body>
+</html>

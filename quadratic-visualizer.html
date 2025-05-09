@@ -124,6 +124,8 @@
         .color-a { color: #2563eb; }
         .color-b { color: #059669; }
         .color-c { color: #dc2626; }
+        .color-h { color: #0f0f0f; }
+        .color-m { color: #000000; }
         #tooltip {
             position: absolute;
             display: none;
@@ -148,6 +150,14 @@
         <span class="color-a" id="a-value">1</span>x^2 + 
         <span class="color-b" id="b-value">0</span>x + 
         <span class="color-c" id="c-value">-1</span>
+    </div>
+
+    <div class="H">
+        Naive Height: <span class="color-h" id="h-value">1</span>
+    </div>
+    <div class="M">
+        Notional M (square root of height): <span class="color-m" id="m-value">1</span>
+            range of roots down to: <span class="color-m" id="m2-value">1</span> 
     </div>
     
     <div class="second-derivative-eq">
@@ -186,7 +196,7 @@
         <div class="control-row">
             <div class="control-label"><span class="color-c">c</span> value:</div>
             <div class="slider-container">
-                <input type="range" id="c-slider" class="control-slider" min="-500" max="500" value="1" step="1">
+                <input type="range" id="c-slider" class="control-slider" min="-500" max="500" value="-1" step="1">
                 <div class="control-value" id="c-display">1</div>
             </div>
         </div>
@@ -212,9 +222,14 @@
         const aDisplay = document.getElementById('a-display');
         const bDisplay = document.getElementById('b-display');
         const cDisplay = document.getElementById('c-display');
+
         const aValue = document.getElementById('a-value');
         const bValue = document.getElementById('b-value');
         const cValue = document.getElementById('c-value');
+        const hValue = document.getElementById('h-value');
+        const mValue = document.getElementById('m-value');
+        const m2Value = document.getElementById('m2-value');
+
         const rootsInfo = document.getElementById('roots-info');
         const derivativeValue = document.getElementById('derivative-value');
         const discriminantValue = document.getElementById('discriminant-value');
@@ -236,14 +251,14 @@
             if (discriminant > 0) {
                 const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                 const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                return `Two real roots: x = ${x1.toFixed(2)}, x = ${x2.toFixed(2)}`;
+                return `Two real roots: x_0= ${x1.toFixed(2)}, x_1 = ${x2.toFixed(2)}`;
             } else if (discriminant === 0) {
                 const x = -b / (2 * a);
                 return `One repeated root: x = ${x.toFixed(2)}`;
             } else {
                 const realPart = -b / (2 * a);
                 const imagPart = Math.sqrt(-discriminant) / (2 * a);
-                return `Two complex roots: x = ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i, x = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i`;
+                return `Two complex roots: x^2= ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i, x^2 = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i`;
             }
         }
         
@@ -368,9 +383,13 @@
             aDisplay.textContent = a;
             bDisplay.textContent = b;
             cDisplay.textContent = c;
+
             aValue.textContent = a;
             bValue.textContent = b < 0 ? b : `+${b}`;
             cValue.textContent = c < 0 ? c : `+${c}`;
+            hValue.textContent = Math.max(Math.abs(a), Math.abs(b), Math.abs(c));
+            mValue.textContent = Math.sqrt(Math.max(Math.abs(a), Math.abs(b), Math.abs(c)));
+            m2Value.textContent = Math.sqrt(Math.max(Math.abs(a), Math.abs(b), Math.abs(c)))  / 2;
             
             // Update roots information
             rootsInfo.textContent = calculateRoots(a, b, c);

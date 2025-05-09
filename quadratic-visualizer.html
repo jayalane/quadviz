@@ -163,7 +163,7 @@
     <div class="second-derivative-eq">
         Second derivative of root w.r.t. b: 
         <span class="math-eq">
-            (b^2 - sqrt(b^2 - 4ac))/sqrt(b2 - 4ac)
+            (b^2)/sqrt(b2 - 4ac) - sqrt(b^2 - 4ac)
         </span>
         = <span id="derivative-value">N/A</span>
     </div>
@@ -367,7 +367,7 @@
             }
             
             const sqrtDiscriminant = Math.sqrt(discriminant);
-            const secondDerivative = (b * b + sqrtDiscriminant) / sqrtDiscriminant;
+            const secondDerivative = (b * b / sqrtDiscriminant) - sqrtDiscriminant;
             
             derivativeValue.textContent = secondDerivative.toFixed(4);
         }

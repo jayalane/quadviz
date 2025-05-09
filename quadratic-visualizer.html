@@ -93,6 +93,34 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
+        .second-derivative-eq {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-family: 'Times New Roman', Times, serif;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .math-eq {
+            font-style: italic;
+            margin: 0 8px;
+        }
+        .discriminant {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-family: monospace;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        #discriminant-value {
+            font-weight: bold;
+            font-family: monospace;
+        }
         .color-a { color: #2563eb; }
         .color-b { color: #059669; }
         .color-c { color: #dc2626; }
@@ -117,9 +145,21 @@
     <h1>Quadratic Function Visualizer</h1>
     
     <div class="equation">
-        <span class="color-a" id="a-value">1</span>x² + 
+        <span class="color-a" id="a-value">1</span>x^2 + 
         <span class="color-b" id="b-value">0</span>x + 
-        <span class="color-c" id="c-value">1</span>
+        <span class="color-c" id="c-value">-1</span>
+    </div>
+    
+    <div class="second-derivative-eq">
+        Second derivative of root w.r.t. b: 
+        <span class="math-eq">
+            (b^2 - sqrt(b^2 - 4ac))/sqrt(b2 - 4ac)
+        </span>
+        = <span id="derivative-value">N/A</span>
+    </div>
+    
+    <div class="discriminant">
+        Discriminant: <span class="math-eq">b^2 - 4ac</span> = <span id="discriminant-value">0</span>
     </div>
     
     <div class="roots" id="roots-info">
@@ -159,10 +199,10 @@
     
     <script>
         // Variables
-        let a = 1, b = 0, c = 1;
-        let canvas = document.getElementById('function-plot');
-        let ctx = canvas.getContext('2d');
-        let tooltip = document.getElementById('tooltip');
+        let a = 1, b = 0, c = -1;
+        const canvas = document.getElementById('function-plot');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
         let mousePosition = { x: 0, y: 0 };
         
         // DOM elements
@@ -176,6 +216,8 @@
         const bValue = document.getElementById('b-value');
         const cValue = document.getElementById('c-value');
         const rootsInfo = document.getElementById('roots-info');
+        const derivativeValue = document.getElementById('derivative-value');
+        const discriminantValue = document.getElementById('discriminant-value');
         
         // Calculate roots of the quadratic function
         function calculateRoots(a, b, c) {
@@ -194,14 +236,14 @@
             if (discriminant > 0) {
                 const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                 const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                return `Two real roots: x₁ = ${x1.toFixed(2)}, x₂ = ${x2.toFixed(2)}`;
+                return `Two real roots: x = ${x1.toFixed(2)}, x = ${x2.toFixed(2)}`;
             } else if (discriminant === 0) {
                 const x = -b / (2 * a);
                 return `One repeated root: x = ${x.toFixed(2)}`;
             } else {
                 const realPart = -b / (2 * a);
                 const imagPart = Math.sqrt(-discriminant) / (2 * a);
-                return `Two complex roots: x₁ = ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i, x₂ = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i`;
+                return `Two complex roots: x = ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i, x = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i`;
             }
         }
         
@@ -295,6 +337,26 @@
             return { x, y };
         }
         
+        // Calculate the second derivative of the root with respect to b
+        function updateSecondDerivative(a, b, c) {
+            const discriminant = b * b - 4 * a * c;
+            
+            if (a === 0) {
+                derivativeValue.textContent = "N/A (not a quadratic)";
+                return;
+            }
+            
+            if (discriminant <= 0) {
+                derivativeValue.textContent = "N/A (no real roots)";
+                return;
+            }
+            
+            const sqrtDiscriminant = Math.sqrt(discriminant);
+            const secondDerivative = (b * b + sqrtDiscriminant) / sqrtDiscriminant;
+            
+            derivativeValue.textContent = secondDerivative.toFixed(4);
+        }
+        
         // Draw the quadratic function
         function drawFunction() {
             // Get current values
@@ -312,6 +374,13 @@
             
             // Update roots information
             rootsInfo.textContent = calculateRoots(a, b, c);
+            
+            // Calculate and update the discriminant
+            const discriminant = b * b - 4 * a * c;
+            discriminantValue.textContent = discriminant.toLocaleString();
+            
+            // Calculate and update the second derivative value
+            updateSecondDerivative(a, b, c);
             
             // Calculate range and points
             const range = calculateRange(a, b, c);
@@ -560,3 +629,4 @@
     </script>
 </body>
 </html>
+
